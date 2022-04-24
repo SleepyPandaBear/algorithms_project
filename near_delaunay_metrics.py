@@ -50,22 +50,13 @@ def get_common_edges(triangles):
     # edge.
     for p0,p1,p2 in triangles:
         # p0-p1 edge
-        if p0 <= p1:
-            edges[(p0, p1)].append((p0,p1,p2))
-        else:
-            edges[(p1, p0)].append((p0,p1,p2))
+        edges[tuple(sorted((p0, p1)))].append(tuple(sorted((p0,p1,p2))))
 
         # p1-p2 edge
-        if p1 <= p2:
-            edges[(p1, p2)].append((p0,p1,p2))
-        else:
-            edges[(p2, p1)].append((p0,p1,p2))
+        edges[tuple(sorted((p1, p2)))].append(tuple(sorted((p0,p1,p2))))
 
         # p0-p2 edge
-        if p0 <= p2:
-            edges[(p0, p2)].append((p0,p1,p2))
-        else:
-            edges[(p2, p0)].append((p0,p1,p2))
+        edges[tuple(sorted((p0, p2)))].append(tuple(sorted((p0,p1,p2))))
 
     return edges
 
@@ -76,67 +67,82 @@ def extract_triangles(common_edges):
 
     return triangles
 
+def update_common_edge(common_edges, t, ce, t0, t1):
+    if t[0] in common_edges[(ce[0], ce[1])]:
+        common_edges[(ce[0], ce[1])].remove(t[0])
+        common_edges[(ce[0], ce[1])].append(t0)
+    if t[1] in common_edges[(ce[0], ce[1])]:
+        common_edges[(ce[0], ce[1])].remove(t[1])
+        common_edges[(ce[0], ce[1])].append(t1)
+
+def flip_edge(triangles, common_edges):
+    new_common_edges = defaultdict(list)
+
+    e,t = random.choice(list(common_edges.items()))
+
+    while(len(t) < 2):
+        e,t = random.choice(list(common_edges.items()))
+
+    new_edge = list(set(t[0]) ^ set(t[1]))
+
+    t0 = (new_edge[0], new_edge[1], e[0])
+    t1 = (new_edge[0], new_edge[1], e[1])
+
+    # TODO: add to 'new_common_edges'
+    # TODO: update all 4 edge edges of quadliteral
+
+    perimeter = list(set(t[0]) | set(t[1]))
+    ce0 = list(sorted((perimeter[0], perimeter[1])))
+    ce1 = list(sorted((perimeter[1], perimeter[2])))
+    ce2 = list(sorted((perimeter[2], perimeter[3])))
+    ce3 = list(sorted((perimeter[3], perimeter[0])))
+
+    print("ce:", common_edges)
+    print("perimeter", perimeter)
+    print("perimeter_new:", list(set(t0) | set(t1)))
+    print("ce0", ce0)
+    print("ce[ce0]:", common_edges[(ce0[0], ce0[1])])
+    print("t:", t)
+    print("new t:", t0, t1)
+
+    update_common_edge(common_edges, t, ce0, t0, t1)
+    update_common_edge(common_edges, t, ce1, t0, t1)
+    update_common_edge(common_edges, t, ce2, t0, t1)
+    update_common_edge(common_edges, t, ce3, t0, t1)
+
+    #common_edges[ce0].remove(BAD TRIANGLE)
+    #common_edges[ce0].append(GOOD TRIANGLE)
+
+
+    return common_edges, new_edge
+
 # NOTE(miha): In this function we "skew" Delaunay triangulation, so we can
 # measure how close it is to the original DT.
-def flip_some_edges(points, triangles, probability=0.1):
+def flip_some_edges(points, triangles, flips, probability=0.1):
     common_edges = get_common_edges(triangles)
-    new_common_edges = defaultdict(list)
-    print("common edges", common_edges)
-    bad_edges = []
-    good_edges = []
-    flips = 0
-    tris = set()
+    fliped_edges = []
 
-    for e,t in common_edges.items():
-        # NOTE(miha): Skip edge edges - can't have common edge with another
-        # triangle.
-        print("common edges", new_common_edges)
-        if len(t) < 2:
-            tris.add(t[0])
-            new_common_edges[e].extend(t)
-            continue
+    # iterate over all common edges (common edges has only lists with 2 triangles)
+    # we create a new set for storing trinagles
+    # if there is prob to flip an edge, we flip it
+    # else no
+    # we always append sorted new triangles to new set for storing trinagles
 
-        tris.add(t[0])
-        tris.add(t[1])
-        
-        if random.random() < probability:
-            old_edge0 = e[0] 
-            old_edge1 = e[1]
+    # better idea:
+    # make function for one flip
+    # argument accepts number of flips, call above function that many times
 
-            # TODO(miha): Refractor, we can use variable e from for loop!
-            new_edge = set(t[0]) ^ set(t[1])
-            new_edge0 = new_edge.pop()
-            new_edge1 = new_edge.pop()
-
-            if new_edge0 > new_edge1:
-                tmp = new_edge1
-                new_edge1 = new_edge0
-                new_edge0 = tmp
-
-            if line_intersection(points[old_edge0], points[old_edge1], points[new_edge0], points[new_edge1]):
-                new_triangle0 = (new_edge0, new_edge1, e[0])
-                new_triangle1 = (new_edge0, new_edge1, e[1])
-                print("new triangle:", new_triangle0, new_triangle1)
-                new_common_edges[e].append(new_triangle0)
-                new_common_edges[e].append(new_triangle1)
-
-                flips += 1
-        else:
-            print("old triangle:", t[0], t[1])
-            new_common_edges[e].append(t[0])
-            new_common_edges[e].append(t[1])
+    for i in range(flips):
+        common_edges, fliped_edge = flip_edge(triangles, common_edges)
+        print(fliped_edge)
+        print(common_edges)
+        print("_--------")
+        fliped_edges.append(fliped_edge)
     
-    # NOTE(miha): Add new edges and delete old ones
-    for ge, be in zip(good_edges, bad_edges):
-        tmp = common_edges[be]
-        #new_common_edges[be] = []
-        #new_common_edges[ge[0]].append(tmp[0])
-        #new_common_edges[ge[0]].append(tmp[1])
 
-    new_triangles = extract_triangles(new_common_edges)
-    print("len(t):", len(triangles), " len(nt):", len(new_triangles))
-    print("new_common_edge:", new_common_edges)
-    return new_triangles
+    new_triangles = extract_triangles(common_edges)
+    print(new_triangles)
+    return extract_triangles(common_edges)
 
 def random_points(n, x_range=(-10, 10), y_range=(-10, 10)):
     points = []
@@ -148,7 +154,7 @@ def random_points(n, x_range=(-10, 10), y_range=(-10, 10)):
     return points
 
 def main():
-    points = random_points(5)
+    points = random_points(6)
 
     dt = Delaunay2D()
     for p in points:
@@ -156,10 +162,7 @@ def main():
 
     dt_triangles = dt.exportTriangles()
 
-    print(points)
-    non_dt_triangles = flip_some_edges(points, dt_triangles, probability=1)
-    print("dt_triangles:", dt_triangles)
-    print("non_dt_triangles:", non_dt_triangles)
+    non_dt_triangles = flip_some_edges(points, dt_triangles, 1, probability=1)
 
     draw_triangles(points, dt_triangles)
     draw_triangles(points, non_dt_triangles)
