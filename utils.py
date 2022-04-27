@@ -39,8 +39,20 @@ def line_intersection(A, B, C, D):
 # NOTE(miha): 'b' is a common point.
 def get_angle(points, a, b, c):
     # TODO(miha): Here we need to use different metric aka manhathan, p-norm, infinity
-    ang = math.degrees(math.atan2(points[c][1]-points[b][1], points[c][0]-points[b][0]) - math.atan2(points[a][1]-points[b][1], points[a][0]-points[b][0]))
-    return ang + 360 if ang < 0 else ang
+
+    # NOTE(miha): classic lin alg style for finding angle
+    # cos(a) = dot(x,y)/norm(x)*norm(y)
+
+    p0 = points[a]
+    p1 = points[b]
+    p2 = points[c]
+
+    v0 = np.array([p0[0] - p1[0], p0[1] - p1[1]])
+    v1 = np.array([p1[0] - p2[0], p1[1] - p2[1]])
+
+    ang = math.degrees(math.acos(np.dot(v0, v1)/(np.linalg.norm(v0)*np.linalg.norm(v1))))
+
+    return ang
 
 def circumcenter(points, triangle):
     a = points[triangle[0]]
@@ -85,6 +97,40 @@ def in_circumcircle(points, triangle, d):
     result = np.linalg.det(det)
 
     return result
+
+def distance(p0, p1):
+    return math.sqrt(math.pow(p0[0] - p1[0], 2) + math.pow(p0[1] - p1[1], 2))
+
+# NOTE(miha): We divide quad into two triangles and then calculate area of both
+# triangles and sum it up.
+def calculate_quad_area(a, b, c, d):
+    # NOTE(miha): projecting a onto b formula: (np.dot(a, b) / np.dot(b, b)) * b
+
+    # NOTE(miha): projecting (a,b) onto (b,d)
+    v0 = np.array([a[0]-b[0], a[1]-b[1]])
+    v1 = np.array([d[0]-b[0], d[1]-b[1]])
+    p0 = (np.dot(v0, v1)/np.dot(v1, v1))*v1
+
+    # NOTE(miha): projecting (c,d) onto (b,d)
+    v0 = np.array([c[0]-d[0], c[1]-d[1]])
+    v1 = np.array([b[0]-d[0], b[1]-d[1]])
+    p1 = (np.dot(v0, v1)/np.dot(v1, v1))*v1
+    
+    e0 = np.array([p0[0]-a[0], p0[1]-a[1]])
+    e1 = np.array([p1[0]-c[0], p1[1]-c[1]])
+
+    # NOTE(miha): l stands for length
+
+    e0l = np.linalg.norm(e0)
+    e1l = np.linalg.norm(e1)
+
+    common_edge = np.array([d[0]-b[0], d[1]-b[1]])
+    common_edgel = np.linalg.norm(common_edge)
+
+    s0 = e0l * (common_edgel/2)
+    s1 = e1l * (common_edgel/2)
+
+    return s0 + s1
 
 # NOTE(miha): Linear interpolation&exterpolation between two points, returns
 # tuple (x,y) which is a point on the interpolated line at 'x'.
@@ -175,6 +221,8 @@ def flip_some_edges(points, triangles, num_of_flips):
 
     return triangles, flips
 
+# NOTE(miha): This function returns a dictionary with keys consisting of edges
+# and values consisting of triangles that are adjacent to that edge.
 def get_common_edges(triangles):
     edges = defaultdict(list)
 
