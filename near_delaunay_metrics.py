@@ -58,7 +58,17 @@ def dual_edge_ratio(points, triangles):
                 uv = utils.distance(points[e[0]], points[e[1]])
                 pq = utils.distance(center, other_center)
 
-                print("ratio:", pq/uv)
+                print("1:", utils.p_distance(points[e[0]], points[e[1]], 1))
+                print("2:", pq/uv)
+                print("3:", utils.p_distance(points[e[0]], points[e[1]], 3))
+                print("4:", utils.p_distance(points[e[0]], points[e[1]], 4))
+                print("5:", utils.p_distance(points[e[0]], points[e[1]], 5))
+                print("6:", utils.p_distance(points[e[0]], points[e[1]], 6))
+                print("7:", utils.p_distance(points[e[0]], points[e[1]], 7))
+                print("70:", utils.p_distance(points[e[0]], points[e[1]], 70))
+                print("700:", utils.p_distance(points[e[0]], points[e[1]], 700))
+                print("max:", utils.max_distance(points[e[0]], points[e[1]]))
+                print("+++++++++++++++++++++++++++++")
 
 # NOTE(miha): Third metric on quads.
 def dual_area_overlap(points, triangles):
@@ -147,13 +157,13 @@ def main():
     #print("-------")
     #opposing_angles(points, non_dt_triangles)
 
-    #dual_edge_ratio(points, dt_triangles)
-    #print("---------")
-    #dual_edge_ratio(points, non_dt_triangles)
-
-    dual_area_overlap(points, dt_triangles)
+    dual_edge_ratio(points, dt_triangles)
     print("---------")
-    dual_area_overlap(points, non_dt_triangles)
+    dual_edge_ratio(points, non_dt_triangles)
+
+    #dual_area_overlap(points, dt_triangles)
+    #print("---------")
+    #dual_area_overlap(points, non_dt_triangles)
 
     #draw.triangles(points, dt_triangles)
     #draw.show()

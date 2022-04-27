@@ -98,6 +98,12 @@ def in_circumcircle(points, triangle, d):
 
     return result
 
+def p_distance(p0, p1, p):
+    return (math.pow(p0[0] - p1[0], 2) + math.pow(p0[1] - p1[1], 2))**(1/p)
+
+def max_distance(p0, p1):
+    return max(abs(p0[0]), abs(p0[1]), abs(p1[0]), abs(p1[1]))
+
 def distance(p0, p1):
     return math.sqrt(math.pow(p0[0] - p1[0], 2) + math.pow(p0[1] - p1[1], 2))
 
