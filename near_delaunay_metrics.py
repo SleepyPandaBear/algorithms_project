@@ -37,6 +37,8 @@ def opposing_angles(points, triangles):
 def dual_edge_ratio(points, triangles):
     common_edges = utils.get_common_edges(triangles)
 
+    print(common_edges)
+
     for e,t in common_edges.items():
         # NOTE(miha): Check if we have a quadliteral
         if len(t) == 2 and t[0] != t[1]:
@@ -142,31 +144,41 @@ def dual_area_overlap(points, triangles):
                 print("area:", area)
 
 def main():
-    points = utils.random_points(6)
+    points,seed = utils.random_grid_points(step=3, div=10, seed='a')
+    print("using seed:", seed)
+
+    print(points)
+
+    # TODO(miha): We still suffer from dict randomness... do we leave it?
+    # TODO(miha): We could also print which edges/triangles were flipped and
+    # then have recreate function that would do the same?
+
+    # TODO(miha): better point generator (gridlike, we move each point by
+    # normal distribution up down)
 
     dt = utils.make_delaunay(points)
     dt_triangles = utils.get_triangles(dt)
 
     # TODO(miha): Start printing random seeds, so we can get some interesting
     # triangulations later!
-    non_dt_triangles, _ = utils.flip_some_edges(points, dt_triangles, 3)
-    print(dt_triangles)
-    print(non_dt_triangles)
+    #non_dt_triangles, _ = utils.flip_some_edges(points, dt_triangles, 3)
+    #print(dt_triangles)
+    #print(non_dt_triangles)
 
     #opposing_angles(points, dt_triangles)
     #print("-------")
     #opposing_angles(points, non_dt_triangles)
 
-    dual_edge_ratio(points, dt_triangles)
-    print("---------")
-    dual_edge_ratio(points, non_dt_triangles)
+    #dual_edge_ratio(points, dt_triangles)
+    #print("---------")
+    #dual_edge_ratio(points, non_dt_triangles)
 
     #dual_area_overlap(points, dt_triangles)
     #print("---------")
     #dual_area_overlap(points, non_dt_triangles)
 
-    #draw.triangles(points, dt_triangles)
-    #draw.show()
+    draw.triangles(points, dt_triangles)
+    draw.show()
     #draw.triangles(points, non_dt_triangles)
     #draw.show()
 

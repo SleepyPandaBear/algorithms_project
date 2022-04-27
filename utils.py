@@ -2,6 +2,7 @@ from collections import defaultdict
 import math
 import random
 import numpy as np
+import sys
 from pyDelaunay2D.delaunay2D import Delaunay2D
 
 # NOTE(miha): Here are gathered all kinds of functions that we need for our
@@ -126,6 +127,8 @@ def calculate_quad_area(a, b, c, d):
     e1 = np.array([p1[0]-c[0], p1[1]-c[1]])
 
     # NOTE(miha): l stands for length
+
+    # TODO(miha): Here we should pass a function for calculating distance :)
 
     e0l = np.linalg.norm(e0)
     e1l = np.linalg.norm(e1)
@@ -252,12 +255,50 @@ def get_common_edges(triangles):
 #                                                                             #
 ###############################################################################
 
-def random_points(n, x_range=(-10, 10), y_range=(-10, 10)):
+def random_points(n, x_range=(-10, 10), y_range=(-10, 10), seed=''):
     points = []
 
+    rng = None
+    resulting_seed = None
+
+    if seed:
+        rng = random.Random(seed)
+        resulting_seed = seed
+    else:
+        seed = random.randrange(sys.maxsize)
+        rng = random.Random(seed)
+        resulting_seed = seed
+
     for _ in range(n):
-        points.append((round(random.uniform(*x_range), 2), \
-                       round(random.uniform(*y_range), 2)))
+        points.append((round(rng.uniform(*x_range), 2), \
+                       round(rng.uniform(*y_range), 2)))
 
-    return points
+    return points, seed
 
+def random_grid_points(step=1, div=2, x_range=(-10, 10), y_range=(-10, 10), seed=''):
+    points = []
+
+    rng = None
+    resulting_seed = None
+
+    rng_distance = step/div
+
+    if seed:
+        rng = random.Random(seed)
+        resulting_seed = seed
+    else:
+        seed = random.randrange(sys.maxsize)
+        rng = random.Random(seed)
+        resulting_seed = seed
+
+    width = (x_range[1] - x_range[0])//step
+    height = (y_range[1] - y_range[0])//step
+
+    for h in range(height):
+        for w in range(width):
+            point = (round(h + rng.uniform(-rng_distance, rng_distance), 2), \
+                     round(w + rng.uniform(-rng_distance, rng_distance), 2))
+
+            points.append(point)
+
+    return points, seed
