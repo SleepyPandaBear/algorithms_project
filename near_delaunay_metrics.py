@@ -161,7 +161,7 @@ def main():
 
     # TODO(miha): Start printing random seeds, so we can get some interesting
     # triangulations later!
-    #non_dt_triangles, _ = utils.flip_some_edges(points, dt_triangles, 3)
+    non_dt_triangles, _ = utils.flip_some_edges(points, dt_triangles, 3)
     #print(dt_triangles)
     #print(non_dt_triangles)
 
@@ -179,7 +179,7 @@ def main():
 
     draw.triangles(points, dt_triangles)
     draw.show()
-    #draw.triangles(points, non_dt_triangles)
-    #draw.show()
+    draw.triangles(points, non_dt_triangles)
+    draw.show()
 
 main()
