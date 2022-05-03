@@ -143,6 +143,18 @@ def dual_area_overlap(points, triangles):
                 area = utils.calculate_quad_area(*pts)
                 print("area:", area)
 
+def scale_points(points, scale):
+    new_points = points[:]
+
+    print("A")
+
+    for p in new_points:
+        p[0] *= scale
+        p[1] *= scale
+
+    print("B")
+    return new_points
+
 def main():
     points,seed = utils.random_grid_points(step=3, div=10, seed='a')
     print("using seed:", seed)
@@ -153,15 +165,14 @@ def main():
     # TODO(miha): We could also print which edges/triangles were flipped and
     # then have recreate function that would do the same?
 
-    # TODO(miha): better point generator (gridlike, we move each point by
-    # normal distribution up down)
+    # TODO(miha): We need to scale up the grid!
 
     dt = utils.make_delaunay(points)
     dt_triangles = utils.get_triangles(dt)
 
     # TODO(miha): Start printing random seeds, so we can get some interesting
     # triangulations later!
-    non_dt_triangles, _ = utils.flip_some_edges(points, dt_triangles, 3)
+    #non_dt_triangles, _ = utils.flip_some_edges(points, dt_triangles, 3)
     #print(dt_triangles)
     #print(non_dt_triangles)
 
@@ -177,9 +188,22 @@ def main():
     #print("---------")
     #dual_area_overlap(points, non_dt_triangles)
 
+    print("C")
+
     draw.triangles(points, dt_triangles)
     draw.show()
-    draw.triangles(points, non_dt_triangles)
+
+    print("D")
+
+    scaled_up = scale_points(points, 10)
+    print("HMM", scaled_up)
+    scaled_dt = utils.make_delaunay(scaled_up)
+    scaled_triangles = utils.get_triangles(scaled_dt)
+
+    draw.triangles(points, dt_triangles)
     draw.show()
+
+    #draw.triangles(points, non_dt_triangles)
+    #draw.show()
 
 main()
