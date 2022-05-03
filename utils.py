@@ -167,9 +167,6 @@ def get_triangles(dt):
 def flip_some_edges(points, triangles, num_of_flips):
     triangles = triangles[:]
 
-    # TODO(miha): We can just keep track of already flipped triangles so we
-    # don't flip them again :)
-
     flips = 0
     flipped_triangles = []
     flipped_edges = []
@@ -228,7 +225,7 @@ def flip_some_edges(points, triangles, num_of_flips):
 
         triangles = tris[:]
 
-    return triangles, flips
+    return triangles, flips, flipped_edges
 
 # NOTE(miha): This function returns a dictionary with keys consisting of edges
 # and values consisting of triangles that are adjacent to that edge.

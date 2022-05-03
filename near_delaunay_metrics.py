@@ -37,8 +37,6 @@ def opposing_angles(points, triangles):
 def dual_edge_ratio(points, triangles):
     common_edges = utils.get_common_edges(triangles)
 
-    print(common_edges)
-
     for e,t in common_edges.items():
         # NOTE(miha): Check if we have a quadliteral
         if len(t) == 2 and t[0] != t[1]:
@@ -153,6 +151,29 @@ def scale_points(points, scale):
 
     return new_points
 
+def flip_same_edges(points, triangles, flipped_edges):
+    common_edges = utils.get_common_edges(triangles)
+    triangles = triangles[:]
+
+    print("TRIANGLES", triangles)
+
+    for e in flipped_edges:
+        t0, t1 = common_edges[tuple(sorted((e[0], e[1])))]
+
+        print("T1 and T2", t0, t1)
+
+        common_edge = list(set(t0) & set(t1))
+        new_common_edge = list(set(t0) ^ set(t1))
+        # CARE(miha): Triangles are not sorted, so this is why we fail here.
+        triangles.remove(t0)
+        triangles.remove(t1)
+        new_t0 = (new_common_edge[0], new_common_edge[1], common_edge[0])
+        new_t1 = (new_common_edge[0], new_common_edge[1], common_edge[1])
+        triangles.append(new_t0)
+        triangles.append(new_t1)
+
+    return triangles
+
 def main():
     points,seed = utils.random_grid_points(step=3, div=10, seed='a')
     print("using seed:", seed)
@@ -162,11 +183,14 @@ def main():
     # TODO(miha): We still suffer from dict randomness... do we leave it?
     # TODO(miha): We could also print which edges/triangles were flipped and
     # then have recreate function that would do the same?
+    # TODO(miha): Use line sweep triangulation and evalue it on how close it is
+    # to the DT.
 
     dt = utils.make_delaunay(points)
     dt_triangles = utils.get_triangles(dt)
 
-    #non_dt_triangles, _ = utils.flip_some_edges(points, dt_triangles, 3)
+    non_dt_triangles, flips, flipped_edges = utils.flip_some_edges(points, dt_triangles, 3)
+    print("FLIPS", flips)
     #print(dt_triangles)
     #print(non_dt_triangles)
 
@@ -178,19 +202,22 @@ def main():
     scaled_dt = utils.make_delaunay(scaled_points)
     scaled_triangles = utils.get_triangles(scaled_dt)
 
+    scaled_non_dt = flip_same_edges(scaled_points, scaled_triangles, flipped_edges)
+
     print(scaled_points)
 
-    #dual_edge_ratio(points, dt_triangles)
-    #print("---------")
-    #dual_edge_ratio(points, non_dt_triangles)
+    print("---------")
+    dual_edge_ratio(points, non_dt_triangles)
+    print("---------")
+    dual_edge_ratio(scaled_points, scaled_non_dt)
 
     #dual_area_overlap(points, dt_triangles)
     #print("---------")
     #dual_area_overlap(points, non_dt_triangles)
 
-    draw.triangles(points, dt_triangles)
+    draw.triangles(points, non_dt_triangles)
     draw.show()
-    draw.triangles(scaled_points, scaled_triangles)
+    draw.triangles(scaled_points, scaled_non_dt)
     draw.show()
     #draw.triangles(points, non_dt_triangles)
     #draw.show()
