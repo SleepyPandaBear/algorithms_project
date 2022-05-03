@@ -40,7 +40,6 @@ def dual_edge_ratio(points, triangles):
     for e,t in common_edges.items():
         # NOTE(miha): Check if we have a quadliteral
         if len(t) == 2 and t[0] != t[1]:
-
             # NOTE(miha): Point not in the triangle t[0]
             inscribed = set(t[1]) - set(t[0])
             inscribed = inscribed.pop()
@@ -58,16 +57,18 @@ def dual_edge_ratio(points, triangles):
                 uv = utils.distance(points[e[0]], points[e[1]])
                 pq = utils.distance(center, other_center)
 
-                print("1:", utils.p_distance(points[e[0]], points[e[1]], 1))
+                # TODO(miha): Here we need to print ratio distance not distance
+                # itself!
+                print("1:", utils.p_distance(center, other_center, 1)/utils.p_distance(points[e[0]], points[e[1]], 1))
                 print("2:", pq/uv)
-                print("3:", utils.p_distance(points[e[0]], points[e[1]], 3))
-                print("4:", utils.p_distance(points[e[0]], points[e[1]], 4))
-                print("5:", utils.p_distance(points[e[0]], points[e[1]], 5))
-                print("6:", utils.p_distance(points[e[0]], points[e[1]], 6))
-                print("7:", utils.p_distance(points[e[0]], points[e[1]], 7))
-                print("70:", utils.p_distance(points[e[0]], points[e[1]], 70))
-                print("700:", utils.p_distance(points[e[0]], points[e[1]], 700))
-                print("max:", utils.max_distance(points[e[0]], points[e[1]]))
+                print("3:", utils.p_distance(center, other_center, 3)/utils.p_distance(points[e[0]], points[e[1]], 3))
+                print("4:", utils.p_distance(center, other_center, 4)/utils.p_distance(points[e[0]], points[e[1]], 4))
+                print("5:", utils.p_distance(center, other_center, 5)/utils.p_distance(points[e[0]], points[e[1]], 5))
+                print("6:", utils.p_distance(center, other_center, 6)/utils.p_distance(points[e[0]], points[e[1]], 6))
+                print("7:", utils.p_distance(center, other_center, 7)/utils.p_distance(points[e[0]], points[e[1]], 7))
+                print("70:", utils.p_distance(center, other_center, 70)/utils.p_distance(points[e[0]], points[e[1]], 70))
+                print("700:", utils.p_distance(center, other_center, 700)/utils.p_distance(points[e[0]], points[e[1]], 700))
+                print("max:", utils.max_distance(center, other_center)/utils.max_distance(points[e[0]], points[e[1]]))
                 print("+++++++++++++++++++++++++++++")
 
 # NOTE(miha): Third metric on quads.
@@ -152,33 +153,60 @@ def scale_points(points, scale):
     return new_points
 
 def flip_same_edges(points, triangles, flipped_edges):
-    common_edges = utils.get_common_edges(triangles)
     triangles = triangles[:]
 
-    print("TRIANGLES", triangles)
+    # TODO(miha): We don't need to shuffle lists!
+    shuffle0 = triangles[:]
+    shuffle1 = triangles[:]
 
-    for e in flipped_edges:
-        t0, t1 = common_edges[tuple(sorted((e[0], e[1])))]
+    flips = 0
+    finished = False
+    N = len(flipped_edges)
 
-        print("T1 and T2", t0, t1)
+    for t0 in shuffle0:
+        if finished:
+            break
 
-        common_edge = list(set(t0) & set(t1))
-        new_common_edge = list(set(t0) ^ set(t1))
-        # CARE(miha): Triangles are not sorted, so this is why we fail here.
-        triangles.remove(t0)
-        triangles.remove(t1)
-        new_t0 = (new_common_edge[0], new_common_edge[1], common_edge[0])
-        new_t1 = (new_common_edge[0], new_common_edge[1], common_edge[1])
-        triangles.append(new_t0)
-        triangles.append(new_t1)
+        for t1 in shuffle1:
+            common_edge = list(set(t0) & set(t1))
+
+            if t0 != t1 and len(common_edge) == 2:
+                new_common_edge = list(set(t0) ^ set(t1))
+
+                # TODO(miha): Flip should alway be legal right?
+                intersects = utils.line_intersection(points[common_edge[0]], points[common_edge[1]],
+                        points[new_common_edge[0]], points[new_common_edge[1]])
+
+                # NOTE(miha): If old and new common edge don't intersects,
+                # flip is illegal so skip it.
+                if intersects == None:
+                    break
+
+                if common_edge in flipped_edges:
+                    triangles.remove(t0)
+                    triangles.remove(t1)
+
+                    new_t0 = (new_common_edge[0], new_common_edge[1], common_edge[0])
+                    new_t1 = (new_common_edge[0], new_common_edge[1], common_edge[1])
+
+                    triangles.append(new_t0)
+                    triangles.append(new_t1)
+
+                    flips += 1
+
+                    flipped_edges.remove(common_edge)
+
+                    if flips == N:
+                        finished = True
+                        break
 
     return triangles
 
 def main():
     points,seed = utils.random_grid_points(step=3, div=10, seed='a')
-    print("using seed:", seed)
+    #print("using seed:", seed)
 
-    print(points)
+    #print(points)
 
     # TODO(miha): We still suffer from dict randomness... do we leave it?
     # TODO(miha): We could also print which edges/triangles were flipped and
@@ -190,7 +218,7 @@ def main():
     dt_triangles = utils.get_triangles(dt)
 
     non_dt_triangles, flips, flipped_edges = utils.flip_some_edges(points, dt_triangles, 3)
-    print("FLIPS", flips)
+    #print("FLIPS", flips)
     #print(dt_triangles)
     #print(non_dt_triangles)
 
@@ -204,21 +232,21 @@ def main():
 
     scaled_non_dt = flip_same_edges(scaled_points, scaled_triangles, flipped_edges)
 
-    print(scaled_points)
+    #print(scaled_points)
 
-    print("---------")
-    dual_edge_ratio(points, non_dt_triangles)
-    print("---------")
-    dual_edge_ratio(scaled_points, scaled_non_dt)
+    #print("1---------")
+    #dual_edge_ratio(points, non_dt_triangles)
+    #print("2---------")
+    #dual_edge_ratio(scaled_points, scaled_non_dt)
 
     #dual_area_overlap(points, dt_triangles)
     #print("---------")
     #dual_area_overlap(points, non_dt_triangles)
 
-    draw.triangles(points, non_dt_triangles)
-    draw.show()
-    draw.triangles(scaled_points, scaled_non_dt)
-    draw.show()
+    #draw.triangles(points, non_dt_triangles)
+    #draw.show()
+    #draw.triangles(scaled_points, scaled_non_dt)
+    #draw.show()
     #draw.triangles(points, non_dt_triangles)
     #draw.show()
 
