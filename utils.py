@@ -246,6 +246,69 @@ def get_common_edges(triangles):
 
     return edges
 
+# NOTE(miha): Scale distance between points.
+def scale_points(points, scale):
+    new_points = []
+
+    for p in points:
+        x = p[0] * scale
+        y = p[1] * scale
+        new_points.append((x,y))
+
+    return new_points
+
+# NOTE(miha): This function flips same edges for the same triangles. It is
+# usefull when we need to flip same edges on the scaled up version to check if
+# the DT metric really works!
+def flip_same_edges(points, triangles, flipped_edges):
+    triangles = triangles[:]
+
+    shuffle0 = triangles[:]
+    shuffle1 = triangles[:]
+
+    flips = 0
+    finished = False
+    N = len(flipped_edges)
+
+    for t0 in shuffle0:
+        if finished:
+            break
+
+        for t1 in shuffle1:
+            common_edge = list(set(t0) & set(t1))
+
+            if t0 != t1 and len(common_edge) == 2:
+                new_common_edge = list(set(t0) ^ set(t1))
+
+                # TODO(miha): Flip should alway be legal right?
+                intersects = line_intersection(points[common_edge[0]], points[common_edge[1]],
+                        points[new_common_edge[0]], points[new_common_edge[1]])
+
+                # NOTE(miha): If old and new common edge don't intersects,
+                # flip is illegal so skip it.
+                if intersects == None:
+                    break
+
+                if common_edge in flipped_edges:
+                    triangles.remove(t0)
+                    triangles.remove(t1)
+
+                    new_t0 = (new_common_edge[0], new_common_edge[1], common_edge[0])
+                    new_t1 = (new_common_edge[0], new_common_edge[1], common_edge[1])
+
+                    triangles.append(new_t0)
+                    triangles.append(new_t1)
+
+                    flips += 1
+
+                    flipped_edges.remove(common_edge)
+
+                    if flips == N:
+                        finished = True
+                        break
+
+    return triangles
+
 ###############################################################################
 #                                                                             #
 #                             OTHER related utils                             #

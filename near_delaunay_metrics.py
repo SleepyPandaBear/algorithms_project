@@ -27,10 +27,9 @@ def opposing_angles(points, triangles):
 
             angle1 = utils.get_angle(points, c1, b1, a1)
 
-            #if angle0 + angle1 < 180:
-            #    print("not LD")
-
-            print(angle0, angle1, angle0 + angle1)
+            # NOTE(miha): If not LD
+            if angle0 + angle1 < 180:
+                print(angle0, angle1, angle0 + angle1)
 
 # NOTE(miha): Second metric on quads.
 # TODO(miha): What should we do with ratio? sum it up? put it in a list?
@@ -142,66 +141,6 @@ def dual_area_overlap(points, triangles):
                 area = utils.calculate_quad_area(*pts)
                 print("area:", area)
 
-def scale_points(points, scale):
-    new_points = []
-
-    for p in points:
-        x = p[0] * scale
-        y = p[1] * scale
-        new_points.append((x,y))
-
-    return new_points
-
-def flip_same_edges(points, triangles, flipped_edges):
-    triangles = triangles[:]
-
-    # TODO(miha): We don't need to shuffle lists!
-    shuffle0 = triangles[:]
-    shuffle1 = triangles[:]
-
-    flips = 0
-    finished = False
-    N = len(flipped_edges)
-
-    for t0 in shuffle0:
-        if finished:
-            break
-
-        for t1 in shuffle1:
-            common_edge = list(set(t0) & set(t1))
-
-            if t0 != t1 and len(common_edge) == 2:
-                new_common_edge = list(set(t0) ^ set(t1))
-
-                # TODO(miha): Flip should alway be legal right?
-                intersects = utils.line_intersection(points[common_edge[0]], points[common_edge[1]],
-                        points[new_common_edge[0]], points[new_common_edge[1]])
-
-                # NOTE(miha): If old and new common edge don't intersects,
-                # flip is illegal so skip it.
-                if intersects == None:
-                    break
-
-                if common_edge in flipped_edges:
-                    triangles.remove(t0)
-                    triangles.remove(t1)
-
-                    new_t0 = (new_common_edge[0], new_common_edge[1], common_edge[0])
-                    new_t1 = (new_common_edge[0], new_common_edge[1], common_edge[1])
-
-                    triangles.append(new_t0)
-                    triangles.append(new_t1)
-
-                    flips += 1
-
-                    flipped_edges.remove(common_edge)
-
-                    if flips == N:
-                        finished = True
-                        break
-
-    return triangles
-
 def main():
     points,seed = utils.random_grid_points(step=3, div=10, seed='a')
     #print("using seed:", seed)
@@ -218,30 +157,30 @@ def main():
     dt_triangles = utils.get_triangles(dt)
 
     non_dt_triangles, flips, flipped_edges = utils.flip_some_edges(points, dt_triangles, 3)
+
+    scaled_points = utils.scale_points(points, 10)
+    scaled_dt = utils.make_delaunay(scaled_points)
+    scaled_triangles = utils.get_triangles(scaled_dt)
+    scaled_non_dt = utils.flip_same_edges(scaled_points, scaled_triangles, flipped_edges)
+
     #print("FLIPS", flips)
     #print(dt_triangles)
     #print(non_dt_triangles)
 
-    #opposing_angles(points, dt_triangles)
-    #print("-------")
+    #print("1---------")
     #opposing_angles(points, non_dt_triangles)
-
-    scaled_points = scale_points(points, 10)
-    scaled_dt = utils.make_delaunay(scaled_points)
-    scaled_triangles = utils.get_triangles(scaled_dt)
-
-    scaled_non_dt = flip_same_edges(scaled_points, scaled_triangles, flipped_edges)
-
-    #print(scaled_points)
+    #print("2---------")
+    #opposing_angles(points, scaled_non_dt)
 
     #print("1---------")
     #dual_edge_ratio(points, non_dt_triangles)
     #print("2---------")
     #dual_edge_ratio(scaled_points, scaled_non_dt)
 
-    #dual_area_overlap(points, dt_triangles)
-    #print("---------")
+    #print("1---------")
     #dual_area_overlap(points, non_dt_triangles)
+    #print("2---------")
+    #dual_area_overlap(points, scaled_non_dt)
 
     #draw.triangles(points, non_dt_triangles)
     #draw.show()
