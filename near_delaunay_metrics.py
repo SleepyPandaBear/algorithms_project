@@ -141,6 +141,27 @@ def dual_area_overlap(points, triangles):
                 area = utils.calculate_quad_area(*pts)
                 print("area:", area)
 
+def add_randomness_to_points(points, x_range=(-1,1), y_range=(-1,1), seed=''):
+    new_points = []
+
+    rng = None
+    resulting_seed = None
+
+    if seed:
+        rng = random.Random(seed)
+        resulting_seed = seed
+    else:
+        seed = random.randrange(sys.maxsize)
+        rng = random.Random(seed)
+        resulting_seed = seed
+    
+    for p in points:
+        point = (round(p[0] + rng.uniform(x_range[0], x_range[1]), 2), \
+                 round(p[1] + rng.uniform(y_range[0], y_range[1]), 2))
+        new_points.append(point)
+
+    return new_points, resulting_seed
+
 def main():
     points,seed = utils.random_grid_points(step=3, div=10, seed='a')
     #print("using seed:", seed)
@@ -153,6 +174,11 @@ def main():
     # TODO(miha): Use line sweep triangulation and evalue it on how close it is
     # to the DT.
 
+    # TODO(miha): Should we create new class quad for quadlateral metrices?
+
+    # TODO(miha): We have one random object global variable that is called when
+    # the file is inited?
+
     dt = utils.make_delaunay(points)
     dt_triangles = utils.get_triangles(dt)
 
@@ -162,6 +188,11 @@ def main():
     scaled_dt = utils.make_delaunay(scaled_points)
     scaled_triangles = utils.get_triangles(scaled_dt)
     scaled_non_dt = utils.flip_same_edges(scaled_points, scaled_triangles, flipped_edges)
+
+    _, line_sweep_triangles = utils.triangulate(scaled_points)
+    print(line_sweep_triangles)
+    draw.triangles(points, line_sweep_triangles)
+    draw.show()
 
     #print("FLIPS", flips)
     #print(dt_triangles)

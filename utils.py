@@ -311,6 +311,86 @@ def flip_same_edges(points, triangles, flipped_edges):
 
 ###############################################################################
 #                                                                             #
+#                             LINE sweep calculation                          #
+#                                                                             #
+###############################################################################
+
+def distance(back, curr):
+    if len(back[curr]) > 1:
+        a = back[curr].pop()
+        min_dis = math.sqrt(math.pow(curr[0]-a[0],2)+math.pow(curr[1]-a[1],2))
+        min_point = a
+        back[curr].add(a)
+        for b in back[curr]:
+            d = math.sqrt(math.pow(curr[0]-b[0],2)+math.pow(curr[1]-b[1],2)) 
+            if d < min_dis:
+                min_dis = d
+                min_point = b
+        return min_point
+    return None
+
+def triangulate(S, vertical=True):
+    T = set()
+    
+    edges_to_check = set()
+    back_points = defaultdict(set)
+    
+    n = defaultdict(set)
+    
+    if vertical:
+        s = sorted(S)
+    else:
+        s = sorted(S, reverse=True, key=lambda k: k[1])
+
+    #s = generify(s)
+        
+    # new point connects to the others
+    for i in range(len(s)):
+        edge_buffer = set()
+        bad_edges = set()
+        
+        for p in s[0:i]:
+            edge_buffer.add((p, s[i]))
+            
+            for e in edges_to_check:
+                if e is not (p,s[i]):
+                    li = line_intersection(*e, p, s[i])
+                    if li is not None:
+                        bad_edges.add((p,s[i]))
+                    
+        good_edges = set()
+        good_edges = edge_buffer - bad_edges
+
+        for p1,p2 in good_edges:
+            back_points[s[i]].add(p1) 
+        
+        # build edges
+        edges_to_check |= good_edges  
+        
+        # build triangles
+        num_of_triangles = 0
+        l = len(back_points[s[i]])
+        print(num_of_triangles, l)
+        while num_of_triangles < l-1:
+            mp = distance(back_points, s[i])
+            for b in back_points[s[i]]:
+                if b is mp:
+                    continue
+
+                if (b,mp) in edges_to_check:
+                    s1,s2,s3 = sorted((b,mp,s[i]))
+                    T.add((s1,s2,s3))
+                    num_of_triangles += 1
+                elif (mp,b) in edges_to_check:
+                    s1,s2,s3 = sorted((b,mp,s[i]))
+                    T.add((s1,s2,s3))
+                    num_of_triangles += 1                
+            back_points[s[i]].discard(mp)
+        
+    return list(edges_to_check), list(T)
+
+###############################################################################
+#                                                                             #
 #                             OTHER related utils                             #
 #                                                                             #
 ###############################################################################
